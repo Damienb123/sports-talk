@@ -23,7 +23,7 @@ export async function updateSession(request: NextRequest) {
         getAll() {
           return request.cookies.getAll();
         },
-        setAll(cookiesToSet) {
+        setAll(cookiesToSet, headersToSet) {
           cookiesToSet.forEach(({ name, value }) =>
             request.cookies.set(name, value),
           );
@@ -32,6 +32,9 @@ export async function updateSession(request: NextRequest) {
           });
           cookiesToSet.forEach(({ name, value, options }) =>
             supabaseResponse.cookies.set(name, value, options),
+          );
+          Object.entries(headersToSet).forEach(([name, value]) =>
+            supabaseResponse.headers.set(name, value),
           );
         },
       },
@@ -44,19 +47,27 @@ export async function updateSession(request: NextRequest) {
 
   // IMPORTANT: If you remove getClaims() and you use server-side rendering
   // with the Supabase client, your users may be randomly logged out.
-  const { data } = await supabase.auth.getClaims();
-  const user = data?.claims;
+  const { data, error } = await supabase.auth.getClaims();
+  const user = error ? null : data?.claims;
+  // Let the room action return an auth error without navigating away from the
+  // unsent draft. Actions authenticate independently; page GETs stay protected.
+  const roomAction = request.method === "POST" && request.headers.has("next-action")
+    && /^\/games\/[0-9a-f-]+$/i.test(request.nextUrl.pathname);
 
   if (
     request.nextUrl.pathname !== "/" &&
     !user &&
+    !roomAction &&
     !request.nextUrl.pathname.startsWith("/login") &&
     !request.nextUrl.pathname.startsWith("/auth")
   ) {
     // no user, potentially respond by redirecting the user to the login page
     const url = request.nextUrl.clone();
     url.pathname = "/auth/login";
-    return NextResponse.redirect(url);
+    const response = NextResponse.redirect(url);
+    supabaseResponse.cookies.getAll().forEach((cookie) => response.cookies.set(cookie));
+    response.headers.set("Cache-Control", "private, no-store");
+    return response;
   }
 
   // IMPORTANT: You *must* return the supabaseResponse object as it is.

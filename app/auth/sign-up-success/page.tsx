@@ -1,32 +1,18 @@
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import Link from "next/link";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
-export default function Page() {
+export default function SignUpSuccessPage() {
   return (
-    <div className="flex min-h-svh w-full items-center justify-center p-6 md:p-10">
-      <div className="w-full max-w-sm">
-        <div className="flex flex-col gap-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-2xl">
-                Thank you for signing up!
-              </CardTitle>
-              <CardDescription>Check your email to confirm</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">
-                You&apos;ve successfully signed up. Please check your email to
-                confirm your account before signing in.
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    </div>
+    <main className="flex min-h-svh items-center justify-center p-6">
+      <Card className="w-full max-w-sm">
+        <CardHeader><CardTitle>Check your email</CardTitle></CardHeader>
+        <CardContent className="space-y-4">
+          <p>If registration was accepted, we sent a confirmation link. Open it to finish signing up, then sign in.</p>
+          <p className="text-sm text-muted-foreground">Check your spam folder too. If you already have an account, you can sign in.</p>
+          <Link className="block underline underline-offset-4" href="/auth/login">Go to login</Link>
+          <Link className="block underline underline-offset-4" href="/auth/sign-up">Back to signup</Link>
+        </CardContent>
+      </Card>
+    </main>
   );
 }

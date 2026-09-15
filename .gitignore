@@ -12,10 +12,14 @@
 
 # testing
 /coverage
+/test-results/
+/playwright-report/
 
 # next.js
 /.next/
+/.next-browser/
 /out/
+out/
 
 # production
 /build
@@ -23,6 +27,9 @@
 # misc
 .DS_Store
 *.pem
+Thumbs.db 
+.vscode/
+.idea/
 
 # debug
 npm-debug.log*
@@ -34,10 +41,26 @@ yarn-error.log*
 .env*.local
 .env
 .env*
+.env.local
 
 # vercel
 .vercel
 
+# Supabase CLI local link/cache state (may contain connection metadata)
+/supabase/.temp/
+/supabase/.branches/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+#docs
+docs/
+AGENTS.md
+CLAUDE.md
+
+# Legacy local SQL drafts
+lib/supabase/migrations/
+
+# Supabase local state
+supabase/.temp/

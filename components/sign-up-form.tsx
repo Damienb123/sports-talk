@@ -15,11 +15,13 @@ import { Label } from "@/components/ui/label";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { signUp, USERNAME_HELP, USERNAME_PATTERN } from "@/lib/auth/flows";
 
 export function SignUpForm({
   className,
   ...props
 }: React.ComponentPropsWithoutRef<"div">) {
+  const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [repeatPassword, setRepeatPassword] = useState("");
@@ -29,28 +31,26 @@ export function SignUpForm({
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
-    const supabase = createClient();
+    if (isLoading) return;
     setIsLoading(true);
     setError(null);
 
-    if (password !== repeatPassword) {
-      setError("Passwords do not match");
-      setIsLoading(false);
-      return;
-    }
-
     try {
-      const { error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/protected`,
-        },
-      });
-      if (error) throw error;
-      router.push("/auth/sign-up-success");
-    } catch (error: unknown) {
-      setError(error instanceof Error ? error.message : "An error occurred");
+      const result = await signUp(
+        createClient().auth,
+        { username, email, password, repeatPassword },
+        window.location.origin,
+      );
+      if (result.error) {
+        setError(result.error);
+        return;
+      }
+      if (result.destination) {
+        router.replace(result.destination);
+        router.refresh();
+      }
+    } catch {
+      setError("Registration is unavailable. Please try again later.");
     } finally {
       setIsLoading(false);
     }
@@ -64,12 +64,34 @@ export function SignUpForm({
           <CardDescription>Create a new account</CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSignUp}>
+          <form onSubmit={handleSignUp} aria-busy={isLoading}>
             <div className="flex flex-col gap-6">
+              <div className="grid gap-2">
+                <Label htmlFor="username">Username</Label>
+                <Input
+                  id="username"
+                  name="username"
+                  autoComplete="username"
+                  autoCapitalize="none"
+                  spellCheck={false}
+                  required
+                  minLength={3}
+                  maxLength={30}
+                  pattern={USERNAME_PATTERN}
+                  aria-describedby="username-help"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                />
+                <p id="username-help" className="text-sm text-muted-foreground">
+                  {USERNAME_HELP} Usernames are case-sensitive.
+                </p>
+              </div>
               <div className="grid gap-2">
                 <Label htmlFor="email">Email</Label>
                 <Input
                   id="email"
+                  name="email"
+                  autoComplete="email"
                   type="email"
                   placeholder="m@example.com"
                   required
@@ -83,6 +105,8 @@ export function SignUpForm({
                 </div>
                 <Input
                   id="password"
+                  name="password"
+                  autoComplete="new-password"
                   type="password"
                   required
                   value={password}
@@ -95,13 +119,15 @@ export function SignUpForm({
                 </div>
                 <Input
                   id="repeat-password"
+                  name="repeat-password"
+                  autoComplete="new-password"
                   type="password"
                   required
                   value={repeatPassword}
                   onChange={(e) => setRepeatPassword(e.target.value)}
                 />
               </div>
-              {error && <p className="text-sm text-red-500">{error}</p>}
+              {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
               <Button type="submit" className="w-full" disabled={isLoading}>
                 {isLoading ? "Creating an account..." : "Sign up"}
               </Button>
